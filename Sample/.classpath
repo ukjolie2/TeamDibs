@@ -2,7 +2,7 @@
 <classpath>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="lib" path="C:/Users/Kathy/Desktop/phase2example/jsch-0.1.54.jar"/>
-	<classpathentry kind="lib" path="C:/Users/Kathy/Desktop/phase2example/mysql.jar"/>
+	<classpathentry kind="lib" path="src/cs5530/jsch-0.1.54.jar"/>
+	<classpathentry kind="lib" path="src/cs5530/mysql.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
