@@ -15,8 +15,9 @@ public class phase2 {
 	{
 		 System.out.println("        Welcome to UUber System     ");
 		 System.out.println("1. User Registration");
-		 System.out.println("2. Login\n");
-		 System.out.println("Choose an option (1-2): ");
+		 System.out.println("2. Login");
+		 System.out.println("3. Quit\n");
+		 System.out.println("Choose an option (1-3): ");
 		 /*
 		 System.out.println("2. Driver Registration");
 		 System.out.println("3. Make a reservation");
@@ -36,8 +37,6 @@ public class phase2 {
 	}
 	
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-		System.out.println("Example for cs5530");
 		Connector2 con=null;
 		String choice;
         int c=0;
@@ -60,21 +59,34 @@ public class phase2 {
 	            		 
 	            		 continue;
 	            	 }
-	            	 if (c<1 | c>2)
+	            	 if (c<1 | c>3)
 	            		 continue;
 	            	 if(c==1) //User Registration
 	            	 {
-	            		 createUser(in, con);	            		 
+	            		 if(createUser(in, con))
+	            		 {
+	            			 UserOptions userOp = new UserOptions(con);
+	            			 userOp.selectUserOp();
+	            		 } 
 	            	 }
 	            	 else if(c==2)
 	            	 {
-	            		 loginUser(in, con);
+	            		 if(loginUser(in, con))
+	            		 {
+	            			 UserOptions userOp = new UserOptions(con);
+	            			 userOp.selectUserOp();
+	            		 }
+	            	 }
+	            	 else if(c== 3)
+	            	 {
+	            		 System.out.println("Goodbye!");
+	            		 con.stmt.close(); 
+	            		 break;
 	            	 }
 	            	 else
 	            	 {   
 	            		 System.out.println("EoM");
 	            		 con.stmt.close(); 
-	        
 	            		 break;
 	            	 }
 	             }
@@ -100,7 +112,7 @@ public class phase2 {
 	}
 	
 	//Creates a new user in the UU table
-	public static void createUser(BufferedReader in, Connector2 con)
+	public static boolean createUser(BufferedReader in, Connector2 con)
 	{
 		try 
 		{
@@ -138,6 +150,7 @@ public class phase2 {
 				if(success == 1)
 				{
 					System.out.println("Account created! You have been logged in\n");
+					return true; // success logging in
 				}
 
 			} 
@@ -147,10 +160,11 @@ public class phase2 {
 			}
 		}
 		catch (Exception e) { /* ignore close errors */ }
+		return false; // failure to login
 	}
 	
 	//User login
-	public static void loginUser(BufferedReader in, Connector2 con)
+	public static boolean loginUser(BufferedReader in, Connector2 con)
 	{
 		try 
 		{
@@ -175,6 +189,7 @@ public class phase2 {
 				if(result.next())
 				{
 					System.out.println("Log in successful!\n");
+					return true; // success logging in
 				}
 				else
 				{
@@ -187,5 +202,6 @@ public class phase2 {
 			}
 		}
 		catch (Exception e) { /* ignore close errors */ }
+		return false; // failure to log in
 	}
 }
