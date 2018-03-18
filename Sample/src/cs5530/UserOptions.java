@@ -34,7 +34,7 @@ public class UserOptions
 			 
 			 System.out.println("        Welcome UUber User!     ");
 			 System.out.println("1. Register as a UUber Driver");
-			 System.out.println("2. UUber Driver Options");
+			 System.out.println("2. UUber Driver Options"); //Only works when registered as a UUber Driver
 			 System.out.println("3. Record a ride");
 			 System.out.println("4. Favorite a Car");
 			 System.out.println("5. Review a UUber Car"); //View UUber Cars and then review based off primary key?
@@ -56,15 +56,28 @@ public class UserOptions
         		 
         		 continue;
         	 }
-        	 if (c<1 | c>10)
+        	 if (c<1 | c>9)
         		 continue;
-        	 if(c==1) //Driver Registration
-        	 {
-
-        	 }
-        	 else if(c==2)
-        	 {
-
+        	 switch(c) {
+        	 
+        	 case 1: //Register Driver
+        		 break;
+        	 case 2: //Driver options
+        		 break;
+        	 case 3: //Record a ride
+        		 break;
+        	 case 4: //Favorite a car
+        		 break;
+        	 case 5: //Review a car
+        		 break;
+        	 case 6: //Review a feedback record
+        		 break;
+        	 case 7: //Review a user
+        		 break;
+        	 case 8: //Search options
+        		 break;
+        	 case 9: //View top awards
+        		 break;
         	 }
          }
 	}
