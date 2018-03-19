@@ -11,6 +11,8 @@ public class phase2 {
 	/**
 	 * @param args
 	 */
+	private static String userLogin; //current active user
+	private static String userName; //current active user's name
 	public static void displayMenu()
 	{
 		 System.out.println("        Welcome to UUber System     ");
@@ -65,7 +67,7 @@ public class phase2 {
 	            	 {
 	            		 if(createUser(in, con))
 	            		 {
-	            			 UserOptions userOp = new UserOptions(con);
+	            			 UserOptions userOp = new UserOptions(con, userLogin, userName);
 	            			 userOp.selectUserOp();
 	            		 } 
 	            	 }
@@ -73,7 +75,7 @@ public class phase2 {
 	            	 {
 	            		 if(loginUser(in, con))
 	            		 {
-	            			 UserOptions userOp = new UserOptions(con);
+	            			 UserOptions userOp = new UserOptions(con, userLogin, userName);
 	            			 userOp.selectUserOp();
 	            		 }
 	            	 }
@@ -149,7 +151,9 @@ public class phase2 {
 				int success = pstmt.executeUpdate();
 				if(success == 1)
 				{
-					System.out.println("Account created! You have been logged in\n");
+					userLogin = login;
+					userName = name;
+					System.out.println("Account created! You have been logged in. Hello " + userName + "!\n");
 					return true; // success logging in
 				}
 
@@ -179,7 +183,7 @@ public class phase2 {
 			System.out.println("Enter your password: ");
 			while((password = in.readLine()) == null || password.length() == 0);
 				 
-			sql = "SELECT login, password FROM UU WHERE login = ? && password = ?";
+			sql = "SELECT login, password, name FROM UU WHERE login = ? && password = ?";
 			try(PreparedStatement pstmt = con.conn.prepareStatement(sql))
 			{
 				pstmt.setString(1,  login);
@@ -188,7 +192,9 @@ public class phase2 {
 				ResultSet result = pstmt.executeQuery();
 				if(result.next())
 				{
-					System.out.println("Log in successful!\n");
+					userLogin = login;
+					userName = result.getString("name");
+					System.out.println("Log in successful! Hello " + userName + "!\n");
 					return true; // success logging in
 				}
 				else

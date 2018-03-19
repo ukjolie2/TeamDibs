@@ -15,18 +15,26 @@ View top awards (class)
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 public class UserOptions
 {
 	Connector2 con;
-	public UserOptions(Connector2 con)
+	BufferedReader in;
+	String userLogin; //current active user
+	String userName; //current active user name
+	public UserOptions(Connector2 con, String userLogin, String userName)
 	{
 		this.con = con;
+		this.userLogin = userLogin;
+		this.userName = userName;
 	}
 	public void selectUserOp()
 	{
 		 
-		 BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+		 in = new BufferedReader(new InputStreamReader(System.in));
 		 String choice = null;
 	        int c=0;
 		 while(c != 10)
@@ -59,10 +67,19 @@ public class UserOptions
         	 if (c<1 | c>9)
         		 continue;
         	 switch(c) {
-        	 
         	 case 1: //Register Driver
+        		 createDriver();
         		 break;
         	 case 2: //Driver options
+        		 if(isDriver())
+        		 {
+        			 DriverOptions driverOps = new DriverOptions(con, userLogin);
+        			 driverOps.selectDriverOp();
+        		 }
+        		 else
+        		 {
+        			 System.out.println("Please register as a UUber Driver first!\n");
+        		 }
         		 break;
         	 case 3: //Record a ride
         		 break;
@@ -81,4 +98,76 @@ public class UserOptions
         	 }
          }
 	}
+	
+	/*
+	 * Creates a UUber Driver in UD table with current user's login
+	 */
+	public boolean createDriver()
+	{
+		try 
+		{
+			String sql=null;
+			String confirmation = null;
+			System.out.println("Confirm you would like to register as an UUber Driver as: ");
+			System.out.println("Login: " + userLogin);
+			System.out.println("Name: " + userName);
+			System.out.println("yes/no?");
+			while(true)
+			{
+				confirmation = in.readLine();
+				if(confirmation.equals("yes") || confirmation.equals("no"))
+					break;
+			}
+			if(confirmation.equals("yes"))
+			{
+				sql = "INSERT INTO UD(login, name) VALUES(?,?)";
+				try(PreparedStatement pstmt = con.conn.prepareStatement(sql))
+				{
+					pstmt.setString(1,  userLogin);
+					pstmt.setString(2, userName);
+					int success = pstmt.executeUpdate();
+					if(success == 1)
+					{
+						System.out.println("You have been registered as a UUber Driver!\n");
+						return true; // success logging in
+					}
+	
+				} 
+				catch(SQLException e) 
+				{
+					System.out.println("Registration failed. You are already registered as a driver\n");
+				}
+			}
+		}
+		catch (Exception e) { /* ignore close errors */ }
+		return false; // failure to login
+	}
+	
+	/*
+	 * Checks if current active user is a registered driver
+	 */
+	public boolean isDriver()
+	{
+		try 
+		{
+			String sql=null;
+				 
+			sql = "SELECT login FROM UD WHERE login = ?";
+			try(PreparedStatement pstmt = con.conn.prepareStatement(sql))
+			{
+				pstmt.setString(1,  userLogin);
+
+				ResultSet result = pstmt.executeQuery();
+				if(result.next())
+				{
+					return true; // is a driver
+				}
+			} 
+			catch(SQLException e) {}
+		}
+		catch (Exception e) { /* ignore close errors */ }
+		return false; //not a driver
+	}
+	
+	
 }

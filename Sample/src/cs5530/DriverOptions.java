@@ -6,24 +6,32 @@ Update a UUber Car*/
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import com.mysql.jdbc.ResultSetMetaData;
 
 public class DriverOptions
 {
 	Connector2 con;
-	public DriverOptions(Connector2 con)
+	BufferedReader in;
+	String userLogin;
+	public DriverOptions(Connector2 con, String userLogin)
 	{
 		this.con = con;
+		this.userLogin = userLogin;
 	}
 	public void selectDriverOp()
 	{
-		BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+		 in = new BufferedReader(new InputStreamReader(System.in));
 		 String choice = null;
-	        int c=0;
+	     int c=0;
 		 while(c != 3)
-        {
+		 {
 			 System.out.println("        UUber Driver Options     ");
 			 System.out.println("1. Add a new UUber Car");
-			 System.out.println("2. UUpdate a UUber Car");
+			 System.out.println("2. Update a UUber Car");
 			 System.out.println("3. Go back\n");
 			 System.out.println("Choose an option (1-3): ");
 			 
@@ -49,12 +57,122 @@ public class DriverOptions
 	       	}
         }
 	}
-	public void addNewCar()
+	public boolean addNewCar()
 	{
-		//sql to add UUber car
+		try 
+		{
+			String choice = null;
+			int c2 = 0;
+			String category = null;
+			String make = null;
+			String model = null;
+			String yearS = null;
+			String sql=null;
+			
+			System.out.println("Choose a category: ");
+			while(c2<1 | c2>3)
+			 {
+				 System.out.println("1. Economy");
+				 System.out.println("2. Comfort");
+				 System.out.println("3. Luxury\n");
+				 System.out.println("Choose an option (1-3): ");
+				 
+				 try {
+					 while ((choice = in.readLine()) == null || choice.length() == 0);
+				 } catch (IOException e1) { /*ignore*/}
+				 try{
+					 c2 = Integer.parseInt(choice);
+				 }catch (Exception e)
+				 {
+					 continue;
+				 }
+				 if (c2<1 | c2>3)
+					 continue;
+				 switch(c2) {
+		       	 
+			     	case 1: //Add a new UUber Car
+			     		category = "Economy";
+			       		break;
+			       	case 2: //UUpdate a UUber Car
+			       		category = "Comfort";
+			       		break;
+			       	case 3:
+			       		category = "Luxury";
+			       		break;
+		       	}
+	        }
+			
+			System.out.println("Enter the make of your car: ");
+			while((make = in.readLine()) == null || make.length() == 0);
+			System.out.println("Enter the model of your: ");
+			while((model = in.readLine()) == null || model.length() == 0);
+			System.out.println("Enter the year of your car: ");
+			while((yearS = in.readLine()) == null || yearS.length() == 0) 
+			{
+				try{
+					Integer.parseInt(yearS);
+				 }catch (Exception e)
+				 {
+					 System.out.println("Please enter a valid year");
+				 }
+			}
+			sql = "INSERT INTO UC(category, make, model, year, login) VALUES(?,?,?,?,?)"; //vin autoincrements
+			try(PreparedStatement pstmt = con.conn.prepareStatement(sql))
+			{
+				pstmt.setString(1, category);
+				pstmt.setString(2, make);
+				pstmt.setString(3, model);
+				pstmt.setString(4, yearS);
+				pstmt.setString(5, userLogin);
+				int success = pstmt.executeUpdate();
+				if(success == 1)
+				{
+					System.out.println("Car has been registered!\n");
+					return true; // success logging in
+				}
+
+			} 
+			catch(SQLException e) 
+			{
+				System.out.println("Car registration has failed!\n");
+			}
+		}
+		catch (Exception e) { /* ignore close errors */ }
+		return false; // failure to login
 	}
-	public void updateCar()
+	public boolean updateCar()
 	{
-		//sql to update car
+		String sql;
+		try 
+		{
+			sql = "SELECT * FROM UC WHERE login = ?";
+			try(PreparedStatement pstmt = con.conn.prepareStatement(sql))
+			{
+				pstmt.setString(1,  userLogin);
+				System.out.println(userLogin);
+				ResultSet result = pstmt.executeQuery();
+				boolean isNext = result.next();
+				if(isNext)
+				{
+				    System.out.println(result.getString("vin") + " " + result.getString("category") + " " +
+				    		result.getString("make") + " " + result.getString("model") + " " + result.getString("year"));
+				    while(result.next())
+				    {
+					    System.out.println(result.getString("vin") + " " + result.getString("category") + " " +
+					    		result.getString("make") + " " + result.getString("model") + " " + result.getString("year"));
+				    }
+				}
+				else
+				{
+					System.out.println("You have no registered carss.\n");
+				}
+			} 
+			catch(SQLException e) 
+			{
+				System.out.println("You have no registered cars.\n");
+			}
+		}
+		catch (Exception e) { /* ignore close errors */ }
+		return false; // failure to log in
 	}
 }
