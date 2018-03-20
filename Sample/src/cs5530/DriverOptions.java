@@ -158,11 +158,11 @@ public class DriverOptions
 				if(isNext)
 				{
 				    System.out.println("vin: " + result.getString("vin") + "\n\t" + result.getString("category") + ", " +
-				    		result.getString("make") + ", " + result.getString("model") + ", " + result.getString("year"));
+				    		result.getString("make") + " " + result.getString("model") + ", " + result.getString("year"));
 				    while(result.next())
 				    {
 					    System.out.println("vin: " + result.getString("vin") + "\n\t" + result.getString("category") + ", " +
-					    		result.getString("make") + ", " + result.getString("model") + ", " + result.getString("year"));
+					    		result.getString("make") + " " + result.getString("model") + ", " + result.getString("year"));
 				    }
 				    System.out.println("\n");
 				    return true;
