@@ -42,12 +42,12 @@ public class UserOptions
 			 
 			 System.out.println("        Welcome UUber User!     ");
 			 System.out.println("1. Register as a UUber Driver"); //DONE
-			 System.out.println("2. UUber Driver Options"); //DONE/Only works when registered as a UUber Driver
+			 System.out.println("2. UUber Driver Options"); //DONE / Only works when registered as a UUber Driver
 			 System.out.println("3. Reserve a ride");
 			 System.out.println("4. Record a ride");
 			 System.out.println("5. Favorite a Car"); //DONE
 			 System.out.println("6. Review a UUber Car"); //DONE
-			 System.out.println("7. View UUber Cars and reviews"); //View UUBer Cars, then feed back and then review feedback
+			 System.out.println("7. View UUber Cars and reviews"); //DONE / View UUBer Cars, then feed back and then review feedback
 			 System.out.println("8. Review a user"); //View UUber users then review user
 			 System.out.println("9. Search");
 			 System.out.println("10. View top awards");
@@ -86,20 +86,25 @@ public class UserOptions
         	 case 4: //Record a ride
         		 break;
         	 case 5: //Favorite a car
-        		 printUC();
-        		 if(!hasFav()) //if has no favorite
+        		 if(printUC())
         		 {
-        			 addNewFavorite();
-        		 }
-        		 else
-        		 {
-        			 updateFavorite();
+        			 if(!hasFav()) //if has no favorite
+	        		 {
+	        			 addNewFavorite();
+	        		 }
+	        		 else
+	        		 {
+	        			 updateFavorite();
+	        		 }
         		 }
         		 break;
         	 case 6: //Review a car
-        		 reviewUC();
+        		 if(printUC())
+        			 reviewUC();
         		 break;
         	 case 7: //Review a feedback record
+        		 if(printUC())
+        			 rateFBUsefulness();
         		 break;
         	 case 8: //Review a user
         		 break;
@@ -344,8 +349,6 @@ public class UserOptions
 			String text = null;
 			String score = null;
 		
-			System.out.println("List of UUber Cars");
-			printUC();
 			System.out.println("Type in the vin of the vehicle you would like to review: ");
 			while(vin == null)
 			{
@@ -367,7 +370,7 @@ public class UserOptions
 			}
 			if(!hasReviewed(vin))
 			{
-				System.out.println("Type in short feedback for this car: ");
+				System.out.println("Type in a short comment for this car: ");
 				text = in.readLine();
 				System.out.println("Type in a score for this car (0-10): ");
 				while(score == null)
@@ -444,12 +447,150 @@ public class UserOptions
 		catch (Exception e) {}
 		return false; //has not reviewed this car
 	}
-
+	/*
+	 * Views UUber cars. User picks which car to view feedback of, then has the option of reviewing those feedbacks
+	 * (Usefulness rating)
+	 */
+	public boolean rateFBUsefulness()
+	{
+		try 
+		{
+			String sql=null;
+			String vin = null;
+			String fid = null;
+			String rating = null;
+			System.out.println("Type in the vin of the vehicle you would like see the feedback of: ");
+			while(vin == null)
+			{
+				vin = in.readLine();
+				try
+				{
+					 Integer.parseInt(vin);
+					 if(!validVin(vin))
+					 {
+						 vin = null;
+						 System.out.println("Not a valid vin, try again: ");
+					 }
+				}
+				catch (Exception e) 
+				{
+					System.out.println("Not a valid vin, try again: ");
+					vin = null;
+				}
+			}
+			if(printUCReviews(vin))
+			{
+				String answer = null;
+				System.out.println("Would you like to rate a feedback? y/n");
+				while(answer == null)
+				{
+					answer = in.readLine();
+					if(answer.compareTo("y") == 0)
+					{
+						System.out.println("Type in the fid of the feedback you would like to review the usefulness of: ");
+						while(fid == null)
+						{
+							fid = in.readLine();
+							try
+							{
+								 Integer.parseInt(fid);
+							}
+							catch (Exception e) 
+							{
+								System.out.println("Not a valid fid, try again: ");
+								fid = null;
+							}
+						}
+						if(!isOwnFeedback(fid))
+						{
+							System.out.println("Type in the rating you would like to give to this feedback (0 = useless, 1 = useful, 2 = very useful): ");
+							while(rating == null)
+							{
+								rating = in.readLine();
+								try
+								{
+									 int ratingInt = Integer.parseInt(rating);
+									 if(ratingInt < 0 | ratingInt > 2)
+									 {
+										 System.out.println("Not a valid rating. Try again: ");
+										 rating = null;
+									 }
+								}
+								catch (Exception e) 
+								{
+									System.out.println("Not a valid rating, try again: ");
+									rating = null;
+								}
+							}
+							sql = "INSERT INTO Rates(login, fid, rating) VALUES(?,?,?)";
+							try(PreparedStatement pstmt = con.conn.prepareStatement(sql))
+							{
+								pstmt.setString(1,  userLogin);
+								pstmt.setString(2, fid);
+								pstmt.setString(3, rating);
+								int success = pstmt.executeUpdate();
+								if(success == 1)
+								{
+									System.out.println("You have successfully rated the feedback!\n");
+									return true; // success in rating feedback
+								}
+				
+							} 
+							catch(SQLException e) 
+							{
+								System.out.println("Failed to rate the feedback. You have already rated this.\n");
+							}
+						}
+						else
+							System.out.println("You cannot rate your own feedback!\n");
+					}
+					else if(answer.compareTo("n") == 0)
+					{
+						break;
+					}
+					else
+					{
+						System.out.println("Not a valid answer. Try again: ");
+						answer = null;
+					}
+				}
+			}
+		}
+		catch (Exception e) 
+		{
+			System.out.println("Failed to rate the feedback.\n");
+		}
+		return false; // fail to rate the feedback
+		
+	}
+	/*
+	 * Checks if feedback user is rating is their own feedback
+	 */
+	public boolean isOwnFeedback(String fid)
+	{
+		try 
+		{		 
+			String sql = "SELECT * FROM Feedback WHERE fid = ?";
+			try(PreparedStatement pstmt = con.conn.prepareStatement(sql))
+			{
+				pstmt.setString(1, fid);
+				ResultSet result = pstmt.executeQuery();
+				if(result.next())
+				{
+					if(userLogin.compareTo(result.getString("login")) == 0)
+						return true; // is own feedback
+				}
+			} 
+			catch(SQLException e) {}
+		}
+		catch (Exception e) {}
+		return false; //is not own feedback
+	}
 	/*******MISC HELPERS/PRINTING*********/
 	/*
 	 * Prints all UUber Cars (vin, category, make, model, year)
 	 */
-	public void printUC()
+	public boolean printUC()
 	{
 		try 
 		{
@@ -459,34 +600,80 @@ public class UserOptions
 			try(PreparedStatement pstmt = con.conn.prepareStatement(sql))
 			{
 				ResultSet result = pstmt.executeQuery();
-				while(result.next())
+				System.out.println("List of UUber Cars: ");
+				if(result.isBeforeFirst())
 				{
-					String vin = result.getString("vin");
-					try(PreparedStatement pstmt2 = con.conn.prepareStatement(sql2))
+					while(result.next())
 					{
-						pstmt2.setString(1, vin);
-						ResultSet result2 = pstmt2.executeQuery();
-						if(result2.next()) 
+						String vin = result.getString("vin");
+						try(PreparedStatement pstmt2 = con.conn.prepareStatement(sql2))
 						{
-							try(PreparedStatement pstmt3 = con.conn.prepareStatement(sql3))
+							pstmt2.setString(1, vin);
+							ResultSet result2 = pstmt2.executeQuery();
+							if(result2.next()) 
 							{
-								pstmt3.setString(1, result2.getString("tid"));
-								ResultSet result3 = pstmt3.executeQuery();
-								if(result3.next())
+								try(PreparedStatement pstmt3 = con.conn.prepareStatement(sql3))
 								{
-									System.out.println("vin: " + vin + "\n\t" + result.getString("category") + ", " +
-							    		result3.getString("make") + " " + result3.getString("model") + ", " + result.getString("year"));
+									pstmt3.setString(1, result2.getString("tid"));
+									ResultSet result3 = pstmt3.executeQuery();
+									if(result3.next())
+									{
+										System.out.println("vin: " + vin + "\n\t" + result.getString("category") + ", " +
+								    		result3.getString("make") + " " + result3.getString("model") + ", " + result.getString("year"));
+									}
 								}
+								catch(SQLException e) {}
 							}
-							catch(SQLException e) {}
-						}
-					} 
-					catch(SQLException e) {}
+						} 
+						catch(SQLException e) {}
+					}
+				}
+				else
+				{
+					System.out.println("There are no cars");
+					return false;
 				}
 			} 
 			catch(SQLException e) {}
 		}
 		catch (Exception e) {}
+		return true;
+	}
+	/*
+	 * Prints reviews for a selected UUber Car. If there are no cars, return false
+	 */
+	public boolean printUCReviews(String vin)
+	{
+		try 
+		{
+			String sql = "SELECT * FROM Feedback WHERE vin = ?";
+			try(PreparedStatement pstmt = con.conn.prepareStatement(sql))
+			{
+				pstmt.setString(1, vin);
+				ResultSet result = pstmt.executeQuery();
+				if(result.isBeforeFirst())
+				{
+					System.out.println("Feedback for UUber car #" + vin);
+					while(result.next())
+					{
+						System.out.println("fid: " + result.getString("fid"));
+						System.out.println("Date: " + result.getString("fbdate") + ", " +
+											"User: " + result.getString("login") + ", " +
+											"Score: " + result.getString("score") + ", " +
+											"Comment: " + result.getString("text") + "\n");
+						return true;
+					}
+				}
+				else
+				{
+					System.out.println("No feedback for this car has been given yet.\n");
+					return false;
+				}
+			} 
+			catch(SQLException e) {System.out.println(e.getMessage());}
+		}
+		catch (Exception e) {System.out.println(e.getMessage());}
+		return false;
 	}
 	/*
 	 * Checks if UC car exists
