@@ -16,9 +16,9 @@ public class phase2 {
 	public static void displayMenu()
 	{
 		 System.out.println("        Welcome to UUber System     ");
-		 System.out.println("1. User Registration");
-		 System.out.println("2. Login");
-		 System.out.println("3. Quit\n");
+		 System.out.println("1. User Registration"); //DONE
+		 System.out.println("2. Login"); //DONE
+		 System.out.println("3. Quit\n"); //DONE
 		 System.out.println("Choose an option (1-3): ");
 		 /*
 		 System.out.println("2. Driver Registration");

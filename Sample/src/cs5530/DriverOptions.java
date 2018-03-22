@@ -30,9 +30,9 @@ public class DriverOptions
 		 while(c != 3)
 		 {
 			 System.out.println("        UUber Driver Options     ");
-			 System.out.println("1. Add a new UUber Car");
-			 System.out.println("2. Update a UUber Car");
-			 System.out.println("3. Go back\n");
+			 System.out.println("1. Add a new UUber Car"); //DONE
+			 System.out.println("2. Update a UUber Car"); //DONE
+			 System.out.println("3. Go back\n"); //DONE
 			 System.out.println("Choose an option (1-3): ");
 			 
 			 try {
