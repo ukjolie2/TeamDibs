@@ -183,10 +183,10 @@ public class UserOptions
 	public boolean hasFav()
 	{
 		try 
-		{
-			String sql=null;
-				 
-			sql = "SELECT * FROM Favorites WHERE login = ?";
+		{		 
+			String sql = "SELECT * FROM Favorites WHERE login = ?";
+			String sql2 = "SELECT * FROM IsCtypes WHERE vin = ?";
+			String sql3 = "SELECT * FROM Ctypes where tid = ?";
 			try(PreparedStatement pstmt = con.conn.prepareStatement(sql))
 			{
 				pstmt.setString(1,  userLogin);
@@ -194,18 +194,24 @@ public class UserOptions
 				ResultSet result = pstmt.executeQuery();
 				if(result.next())
 				{
-					sql = "SELECT * FROM UC WHERE vin = ?";
-					try(PreparedStatement pstmt2 = con.conn.prepareStatement(sql))
+					try(PreparedStatement pstmt2 = con.conn.prepareStatement(sql2))
 					{
 						pstmt2.setString(1,  result.getString("vin"));
-
 						ResultSet result2 = pstmt2.executeQuery();
 						if(result2.next())
 						{
-							System.out.println("\nYour current favorite is: \n");
-							System.out.println("vin: " + result2.getString("vin") + "\n\t" + result2.getString("category") + ", " +
-					    		result2.getString("make") + " " + result2.getString("model") + ", " + result2.getString("year") + "\n");
-						} 
+							try(PreparedStatement pstmt3 = con.conn.prepareStatement(sql3))
+							{
+								pstmt3.setString(1, result2.getString("tid"));
+								ResultSet result3 = pstmt3.executeQuery();
+								if(result3.next())
+								{
+									System.out.println("\nYour current favorite is:");
+									System.out.println("vin: " + result2.getString("vin") + "\n\t" + result3.getString("make") + " " + result3.getString("model")
+											+ " favorited on date: " + result.getString("fvdate"));
+								} 
+							}
+						}
 					}
 					return true; // has a fav
 				}
@@ -316,18 +322,38 @@ public class UserOptions
 	}
 	public void printUC()
 	{
-		String sql;
 		try 
 		{
-			sql = "SELECT * FROM UC";
+			String sql = "SELECT * FROM UC";
+			String sql2 = "SELECT * FROM IsCtypes WHERE vin = ?";
+			String sql3 = "SELECT * FROM Ctypes WHERE tid = ?";
 			try(PreparedStatement pstmt = con.conn.prepareStatement(sql))
 			{
 				ResultSet result = pstmt.executeQuery();
 				System.out.println("List of UUber Cars:");
 				while(result.next())
 				{
-				    System.out.println("vin: " + result.getString("vin") + "\n\t" + result.getString("category") + ", " +
-				    		result.getString("make") + " " + result.getString("model") + ", " + result.getString("year"));
+					String vin = result.getString("vin");
+					try(PreparedStatement pstmt2 = con.conn.prepareStatement(sql2))
+					{
+						pstmt2.setString(1, vin);
+						ResultSet result2 = pstmt2.executeQuery();
+						if(result2.next()) 
+						{
+							try(PreparedStatement pstmt3 = con.conn.prepareStatement(sql3))
+							{
+								pstmt3.setString(1, result2.getString("tid"));
+								ResultSet result3 = pstmt3.executeQuery();
+								if(result3.next())
+								{
+									System.out.println("vin: " + vin + "\n\t" + result.getString("category") + ", " +
+							    		result3.getString("make") + " " + result3.getString("model") + ", " + result.getString("year"));
+								}
+							}
+							catch(SQLException e) {}
+						}
+					} 
+					catch(SQLException e) {}
 				}
 			} 
 			catch(SQLException e) {}
