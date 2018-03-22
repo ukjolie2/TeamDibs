@@ -202,9 +202,9 @@ public class UserOptions
 						ResultSet result2 = pstmt2.executeQuery();
 						if(result2.next())
 						{
-							System.out.println("\nYour current favorite is: ");
+							System.out.println("\nYour current favorite is: \n");
 							System.out.println("vin: " + result2.getString("vin") + "\n\t" + result2.getString("category") + ", " +
-					    		result2.getString("make") + " " + result2.getString("model") + ", " + result2.getString("year\n"));
+					    		result2.getString("make") + " " + result2.getString("model") + ", " + result2.getString("year") + "\n");
 						} 
 					}
 					return true; // has a fav
@@ -265,6 +265,53 @@ public class UserOptions
 	}
 	public boolean updateFavorite()
 	{
+		try 
+		{
+			String sql = null;
+			String choice = null;
+			int c2 = 0;
+			System.out.println("Type in the vin of the vehicle you would like to favorite: ");
+			try 
+			{
+				 while(choice == null)
+				 {
+					 while ((choice = in.readLine()) == null || choice.length() == 0);
+					 try 
+					 {
+						 Integer.parseInt(choice);
+					 } catch (Exception e) { 
+						 choice = null;
+						 System.out.println("Not a valid vin. Try again: ");
+					 }
+				 }
+			 } catch (IOException e1) {
+				 System.out.println("Not a valid vin. Try again: ");
+			 }
+			
+			//update
+		
+			sql = "UPDATE Favorites SET vin = ?, fvdate = ? where login = ?";
+			try(PreparedStatement pstmt = con.conn.prepareStatement(sql))
+			{
+				java.sql.Timestamp date = new java.sql.Timestamp(new java.util.Date().getTime());
+				pstmt.setString(1, choice);
+				pstmt.setTimestamp(2, date);
+				pstmt.setString(3, userLogin);
+				int success = pstmt.executeUpdate();
+				if(success == 1)
+				{
+					System.out.println("Favorite car has been updated!\n");
+					return true; // successful update
+				}
+
+			} 
+			catch(SQLException e) 
+			{
+				System.out.println("Favorite car update has failed!\n");
+			}
+			
+		}catch(Exception e) {}
+		
 		return false;
 	}
 	public void printUC()
@@ -276,6 +323,7 @@ public class UserOptions
 			try(PreparedStatement pstmt = con.conn.prepareStatement(sql))
 			{
 				ResultSet result = pstmt.executeQuery();
+				System.out.println("List of UUber Cars:");
 				while(result.next())
 				{
 				    System.out.println("vin: " + result.getString("vin") + "\n\t" + result.getString("category") + ", " +
