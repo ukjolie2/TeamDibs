@@ -10,7 +10,7 @@ public class TopAwardsOptions
 {
 	private Connector2 con;
 	private BufferedReader in;
-	public TopAwardsOptions(Connector2 con, String userLogin)
+	public TopAwardsOptions(Connector2 con)
 	{
 		in = new BufferedReader(new InputStreamReader(System.in));
 		this.con = con;

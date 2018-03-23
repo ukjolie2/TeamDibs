@@ -109,6 +109,8 @@ public class UserOptions
         		 searchOps.selectSearchOp();
         		 break;
         	 case 10: //View top awards
+        		 TopAwardsOptions topOps = new TopAwardsOptions(con);
+        		 topOps.selectTopOp();
         		 break;
         	 }
          }
