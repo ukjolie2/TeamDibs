@@ -8,14 +8,15 @@ import java.io.InputStreamReader;
 
 public class TopAwardsOptions
 {
-	Connector2 con;
-	public TopAwardsOptions(Connector2 con)
+	private Connector2 con;
+	private BufferedReader in;
+	public TopAwardsOptions(Connector2 con, String userLogin)
 	{
+		in = new BufferedReader(new InputStreamReader(System.in));
 		this.con = con;
 	}
 	public void selectTopOp()
 	{
-		BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
 		 String choice = null;
 	        int c=0;
 		 while(c != 3)

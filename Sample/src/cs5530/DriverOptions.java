@@ -14,17 +14,17 @@ import com.mysql.jdbc.ResultSetMetaData;
 
 public class DriverOptions
 {
-	Connector2 con;
-	BufferedReader in;
-	String userLogin;
+	private Connector2 con;
+	private BufferedReader in;
+	private String userLogin;
 	public DriverOptions(Connector2 con, String userLogin)
 	{
+		in = new BufferedReader(new InputStreamReader(System.in));
 		this.con = con;
 		this.userLogin = userLogin;
 	}
 	public void selectDriverOp()
 	{
-		 in = new BufferedReader(new InputStreamReader(System.in));
 		 String choice = null;
 	     int c=0;
 		 while(c != 3)

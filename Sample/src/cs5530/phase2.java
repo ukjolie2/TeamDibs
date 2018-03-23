@@ -13,6 +13,7 @@ public class phase2 {
 	 */
 	private static String userLogin; //current active user
 	private static String userName; //current active user's name
+	private static BufferedReader in;
 	public static void displayMenu()
 	{
 		 System.out.println("        Welcome to UUber System     ");
@@ -20,22 +21,6 @@ public class phase2 {
 		 System.out.println("2. Login"); //DONE
 		 System.out.println("3. Quit\n"); //DONE
 		 System.out.println("Choose an option (1-3): ");
-		 /*
-		 System.out.println("2. Driver Registration");
-		 System.out.println("3. Make a reservation");
-		 System.out.println("4. Add a new UUber Car");
-		 System.out.println("5. Update a UUber Car");
-		 System.out.println("6. Record a ride");
-		 System.out.println("7. Favorite a Car");
-		 System.out.println("8. Review a UUber Car");
-		 System.out.println("9. Review a feedback record");
-		 System.out.println("10. Review a User");
-		 System.out.println("11. Search for a UUber Car");
-		 System.out.println("12. Search for useful feedbacks");
-		 System.out.println("13. Search recommended UUber Cars");
-		 System.out.println("14. Search for similar users");
-		 System.out.println("15. View top charts");
-		 System.out.println("16. View user awards");*/
 	}
 	
 	public static void main(String[] args) {
@@ -48,7 +33,7 @@ public class phase2 {
 			 	 con= new Connector2();
 	             System.out.println ("Database connection established");
 	         
-	             BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+	             in = new BufferedReader(new InputStreamReader(System.in));
 	             
 	             while(true)
 	             {
@@ -65,7 +50,7 @@ public class phase2 {
 	            		 continue;
 	            	 if(c==1) //User Registration
 	            	 {
-	            		 if(createUser(in, con))
+	            		 if(createUser(con))
 	            		 {
 	            			 UserOptions userOp = new UserOptions(con, userLogin, userName);
 	            			 userOp.selectUserOp();
@@ -73,7 +58,7 @@ public class phase2 {
 	            	 }
 	            	 else if(c==2)
 	            	 {
-	            		 if(loginUser(in, con))
+	            		 if(loginUser(con))
 	            		 {
 	            			 UserOptions userOp = new UserOptions(con, userLogin, userName);
 	            			 userOp.selectUserOp();
@@ -113,8 +98,10 @@ public class phase2 {
          }
 	}
 	
-	//Creates a new user in the UU table
-	public static boolean createUser(BufferedReader in, Connector2 con)
+	/*
+	 * Creates a new user in the UU table
+	 */
+	public static boolean createUser(Connector2 con)
 	{
 		try 
 		{
@@ -134,7 +121,7 @@ public class phase2 {
 			System.out.println("Enter your name: ");
 			while((name = in.readLine()) == null || name.length() == 0);
 			
-			System.out.println("Enter your address: ");
+			System.out.println("Enter your city: ");
 			while((address = in.readLine()) == null || address.length() == 0);
 			
 			System.out.println("Enter your phone number: ");
@@ -167,8 +154,10 @@ public class phase2 {
 		return false; // failure to login
 	}
 	
-	//User login
-	public static boolean loginUser(BufferedReader in, Connector2 con)
+	/*
+	 * Login user
+	 */
+	public static boolean loginUser(Connector2 con)
 	{
 		try 
 		{
