@@ -17,51 +17,38 @@ public class miscHelpers
 	public boolean printUC()
 	{
 		try 
-		{
-			String sql = "SELECT * FROM UC";
-			String sql2 = "SELECT * FROM IsCtypes WHERE vin = ?";
-			String sql3 = "SELECT * FROM Ctypes WHERE tid = ?";
+		{	
+			String sql = "SELECT UC.vin, category, year, UC.login, make, model, address FROM UC, Ctypes, IsCtypes, UU "
+				+ "WHERE UC.vin = IsCtypes.vin AND IsCtypes.tid = Ctypes.tid AND UU.login = UC.login"; 
 			try(PreparedStatement pstmt = con.conn.prepareStatement(sql))
 			{
+
 				ResultSet result = pstmt.executeQuery();
-				System.out.println("List of UUber Cars: ");
 				if(result.isBeforeFirst())
 				{
+					System.out.println("Search results:");
 					while(result.next())
 					{
-						String vin = result.getString("vin");
-						try(PreparedStatement pstmt2 = con.conn.prepareStatement(sql2))
-						{
-							pstmt2.setString(1, vin);
-							ResultSet result2 = pstmt2.executeQuery();
-							if(result2.next()) 
-							{
-								try(PreparedStatement pstmt3 = con.conn.prepareStatement(sql3))
-								{
-									pstmt3.setString(1, result2.getString("tid"));
-									ResultSet result3 = pstmt3.executeQuery();
-									if(result3.next())
-									{
-										System.out.println("vin: " + vin + "\n\t" + result.getString("category") + ", " +
-								    		result3.getString("make") + " " + result3.getString("model") + ", " + result.getString("year"));
-									}
-								}
-								catch(SQLException e) {}
-							}
-						} 
-						catch(SQLException e) {}
+						System.out.println("vin: " + result.getString("vin"));
+						System.out.println("\t" + "Category: " + result.getString("category") 
+												+ "    Make: " + result.getString("make")
+												+ "    Model: " + result.getString("model")
+												+ "    Year: " + result.getString("year")
+												+ "    Owner: " + result.getString("login")
+												+ "    City: " + result.getString("address"));
 					}
+					System.out.println();
+					return true;
 				}
 				else
 				{
-					System.out.println("There are no cars");
-					return false;
+					System.out.println("There are no cars.");
 				}
 			} 
 			catch(SQLException e) {}
 		}
 		catch (Exception e) {}
-		return true;
+		return false;
 	}
 	/*
 	 * Prints reviews for a selected UUber Car. If there are no cars, return false
