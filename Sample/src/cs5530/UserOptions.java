@@ -90,14 +90,8 @@ public class UserOptions
         	 case 5: //Favorite a car
         		 if(miscH.printUC())
         		 {
-        			 if(!hasFav()) //if has no favorite
-	        		 {
-	        			 addNewFavorite();
-	        		 }
-	        		 else
-	        		 {
-	        			 updateFavorite();
-	        		 }
+        			 printFavorites();
+        			 addNewFavorite();
         		 }
         		 break;
         	 case 6: //Review a car
@@ -193,52 +187,48 @@ public class UserOptions
 	
 	/*******FAVORITES*********/
 	/*
-	 * Determines if user has a favorite or not
+	 * Prints users favorites
 	 */
-	public boolean hasFav()
+	public void printFavorites()
 	{
 		try 
-		{		 
-			String sql = "SELECT * FROM Favorites WHERE login = ?";
-			String sql2 = "SELECT * FROM IsCtypes WHERE vin = ?";
-			String sql3 = "SELECT * FROM Ctypes where tid = ?";
+		{
+			String sql=null;
+			
+			sql = "SELECT Favorites.vin, Favorites.fvdate, UC.category, UC.year, Ctypes.make, Ctypes.model, UC.login "
+					+ "FROM Favorites, UC, Ctypes, IsCtypes "
+					+ "WHERE Favorites.vin = UC.vin AND Favorites.vin = IsCtypes.vin AND IsCtypes.tid = Ctypes.tid AND Favorites.login = ?";
 			try(PreparedStatement pstmt = con.conn.prepareStatement(sql))
 			{
 				pstmt.setString(1,  userLogin);
-
 				ResultSet result = pstmt.executeQuery();
-				if(result.next())
+				if(result.isBeforeFirst())
 				{
-					try(PreparedStatement pstmt2 = con.conn.prepareStatement(sql2))
+					System.out.println("Your Favorites: ");
+					while(result.next())
 					{
-						pstmt2.setString(1,  result.getString("vin"));
-						ResultSet result2 = pstmt2.executeQuery();
-						if(result2.next())
-						{
-							try(PreparedStatement pstmt3 = con.conn.prepareStatement(sql3))
-							{
-								pstmt3.setString(1, result2.getString("tid"));
-								ResultSet result3 = pstmt3.executeQuery();
-								if(result3.next())
-								{
-									System.out.println("\nYour current favorite is:");
-									System.out.println("vin: " + result2.getString("vin") + "\n\t" + result3.getString("make") + " " + result3.getString("model")
-											+ " favorited on date: " + result.getString("fvdate"));
-								} 
-							}
-						}
+						System.out.println("vin: " + result.getString("vin"));
+						System.out.println("\t" + "Category: " + result.getString("category") 
+											+ "    Make: " + result.getString("make")
+											+ "    Model: " + result.getString("model")
+											+ "    Year: " + result.getString("year")
+											+ "    Owner: " + result.getString("login"));
 					}
-					return true; // has a fav
 				}
+				else
+					System.out.println("You have no favorites.");
+
 			} 
-			catch(SQLException e) {}
+			catch(SQLException e) 
+			{
+			}
 		}
-		catch (Exception e) { /* ignore close errors */ }
-		System.out.println("You do not have a current favorite");
-		return false; //does not have a fav
+		catch (Exception e) 
+		{
+		}
 	}
 	/*
-	 * Adds user's favorite car if they don't already have a favorite
+	 * Adds car to users favorites
 	 */
 	public boolean addNewFavorite()
 	{
@@ -286,59 +276,6 @@ public class UserOptions
 		}
 		return false; // fail to favorite a car
 	}
-	/*
-	 * Updates user's favorite car if they already have a favorite
-	 */
-	public boolean updateFavorite()
-	{
-		try 
-		{
-			String sql = null;
-			String choice = null;
-			System.out.println("Type in the vin of the vehicle you would like to favorite: ");
-			try 
-			{
-				 while(choice == null)
-				 {
-					 while ((choice = in.readLine()) == null || choice.length() == 0);
-					 try 
-					 {
-						 Integer.parseInt(choice);
-					 } catch (Exception e) { 
-						 choice = null;
-						 System.out.println("Not a valid vin. Try again: ");
-					 }
-				 }
-			 } catch (IOException e1) {
-				 System.out.println("Not a valid vin. Try again: ");
-			 }
-			
-			//update
-		
-			sql = "UPDATE Favorites SET vin = ?, fvdate = ? where login = ?";
-			try(PreparedStatement pstmt = con.conn.prepareStatement(sql))
-			{
-				java.sql.Timestamp date = new java.sql.Timestamp(new java.util.Date().getTime());
-				pstmt.setString(1, choice);
-				pstmt.setTimestamp(2, date);
-				pstmt.setString(3, userLogin);
-				int success = pstmt.executeUpdate();
-				if(success == 1)
-				{
-					System.out.println("Favorite car has been updated!\n");
-					return true; // successful update
-				}
-
-			} 
-			catch(SQLException e) 
-			{
-				System.out.println("Favorite car update has failed!\n");
-			}
-			
-		}catch(Exception e) {}
-		
-		return false;
-	} 
 	
 	/*******FEEDBACK*********/
 	/*
