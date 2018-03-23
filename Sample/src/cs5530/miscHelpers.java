@@ -12,14 +12,16 @@ public class miscHelpers
 		this.con = con;
 	}
 	/*
-	 * Prints all UUber Cars (vin, category, make, model, year)
+	 * Prints all UUber Cars (vin, category, make, model, year, ower, city/address, average score from feedbacks)
 	 */
 	public boolean printUC()
 	{
 		try 
 		{	
-			String sql = "SELECT UC.vin, category, year, UC.login, make, model, address FROM UC, Ctypes, IsCtypes, UU "
-				+ "WHERE UC.vin = IsCtypes.vin AND IsCtypes.tid = Ctypes.tid AND UU.login = UC.login"; 
+			String sql = "SELECT UC.vin, category, year, UC.login, make, model, address, s.avScore " + 
+					"FROM Ctypes, IsCtypes, UU, UC, " + 
+					"(SELECT UC.vin, AVG(Feedback.score) as avScore FROM UC LEFT OUTER JOIN Feedback ON UC.vin = Feedback.vin GROUP BY UC.vin) as s " + 
+					"WHERE UC.vin = IsCtypes.vin AND IsCtypes.tid = Ctypes.tid AND UU.login = UC.login AND UC.vin = s.vin"; 
 			try(PreparedStatement pstmt = con.conn.prepareStatement(sql))
 			{
 
@@ -35,7 +37,8 @@ public class miscHelpers
 												+ "    Model: " + result.getString("model")
 												+ "    Year: " + result.getString("year")
 												+ "    Owner: " + result.getString("login")
-												+ "    City: " + result.getString("address"));
+												+ "    City: " + result.getString("address")
+												+ "    Average Score: " + result.getString("avScore"));
 					}
 					System.out.println();
 					return true;
