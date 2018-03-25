@@ -26,7 +26,7 @@ public class TopAwardsOptions
         {
 			System.out.println("        Top Awards Options     ");
 			System.out.println("1. View Top Charts"); //DONE / Statistics
-			System.out.println("2. View User Awards");
+			System.out.println("2. View User Awards"); //DONE
 			System.out.println("3. Go back\n");
 			System.out.println("Choose an option (1-3): ");
 			 
@@ -47,10 +47,13 @@ public class TopAwardsOptions
 		       		selectTopChartOps(); //DONE
 		       		break;
 		       	case 2: //View User Awards
+		       		selectTopUsersOps();
 		       		break;
 	       	}
         }
 	}
+	
+	/************TOP CHARTS**************/
 	/*
 	 * View most popular UCs, expensive UCs, highly rated UDs in each car category.
 	 */
@@ -150,7 +153,7 @@ public class TopAwardsOptions
 					}
 					else
 					{
-						System.out.println("There are no cars.");
+						System.out.println("There are no ranked cars for category: " + categories[i]);
 					}
 				}
 			} 
@@ -199,7 +202,7 @@ public class TopAwardsOptions
 					}
 					else
 					{
-						System.out.println("There are no cars.");
+						System.out.println("There are no ranked cars for category: " + categories[i]);
 					}
 				}
 			} 
@@ -243,8 +246,137 @@ public class TopAwardsOptions
 					}
 					else
 					{
-						System.out.println("There are no cars.");
+						System.out.println("There are no ranked cars for category: " + categories[i]);
 					}
+				}
+			} 
+			catch(SQLException e) {}
+		}
+		catch (Exception e) {}
+	}
+	
+	/*************TOP USERS**************/
+	private void selectTopUsersOps()
+	{
+		String choice = null;
+        int c = 0;
+        String num = null;
+        int m = 0;
+        while(c != 3)
+        {
+			System.out.println("        Top Charts Options     ");
+			System.out.println("1. View list of most trusted users");
+			System.out.println("2. View list of most useful users");
+			System.out.println("3. Go back\n");
+			System.out.println("Choose an option (1-3): ");
+			 
+	       	try {
+				while ((choice = in.readLine()) == null || choice.length() == 0);
+			} catch (IOException e1) {}
+	       	try{
+	       		c = Integer.parseInt(choice);
+	       	}catch (Exception e)
+	       	{
+	       		continue;
+	       	}
+	       	if (c<1 | c>2)
+	       		continue;
+	       	System.out.println("Type the max number of positions you would like to see: ");
+	       	while(true)
+	       	{
+	       		try {
+					while ((num = in.readLine()) == null || num.length() == 0);
+				} catch (IOException e1) {}
+		       	try{
+		       		m = Integer.parseInt(num);
+		       		break;
+		       	}catch (Exception e)
+		       	{
+		       		System.out.println("Not a valid number. Try again: ");
+		       	}
+	       	}
+	       	switch(c) {
+	       	 
+		       	case 1: //Most trusted users
+		       		printTopTrusted(m);
+		       		break;
+		       	case 2: //Most useful users
+		       		printTopUseful(m);
+		       		break;
+	       	}
+        }
+	}
+	
+	/*
+	 * Prints top trusted users with limit of m. TrustScore is calculated by counting the number of users that trust him/her
+	 * minus the count of the number of users that don't trust him/her
+	 */
+	private void printTopTrusted(int m)
+	{
+		try 
+		{	
+			String sql = "SELECT DISTINCT IFNULL(o1, 0)-IFNULL(z1,0) AS TrustScore, T1.login2 FROM " + 
+					"(SELECT * FROM " + 
+					"((SELECT COUNT(*) as z1, login2 AS l1 FROM Trust WHERE isTrusted = 0 GROUP BY login2) AS L1 LEFT OUTER JOIN " + 
+					"(SELECT COUNT(*) as o1, login2 AS l2 FROM Trust WHERE isTrusted = 1 GROUP BY login2) AS L2 ON l1 = l2) " + 
+					"UNION ALL " + 
+					"SELECT * FROM ((SELECT COUNT(*) as z2, login2 AS l3 FROM Trust WHERE isTrusted = 0 GROUP BY login2) AS L3 RIGHT OUTER JOIN " + 
+					"(SELECT COUNT(*) as o2, login2 AS l4 FROM Trust WHERE isTrusted = 1 GROUP BY login2) AS L4 ON l3 = l4)) AS x, Trust as T1 WHERE T1.login2 = l1 OR T1.login2 = l2 " +
+					"ORDER BY TrustScore DESC LIMIT ?";
+			try(PreparedStatement pstmt = con.conn.prepareStatement(sql))
+			{
+				pstmt.setInt(1, m);
+				ResultSet result = pstmt.executeQuery();
+				if(result.isBeforeFirst())
+				{
+					int rank = 1;
+					System.out.println("Top " + Integer.toString(m) + " Most Trusted Users");
+					while(result.next())
+					{
+						System.out.println("#" + Integer.toString(rank) + "\n\tUser: " + result.getString("login2"));
+						System.out.println("\t"+ "Trust Score: " + result.getString("TrustScore"));
+						rank++;
+					}
+					System.out.println();
+				}
+				else
+				{
+					System.out.println("There are no users ranked");
+				}
+			} 
+			catch(SQLException e) {}
+		}
+		catch (Exception e) {}
+	}
+	
+	/*
+	 * Prints top most useful users. Usefulness score is calculated by taking the average usefulness of all of his/her feedbacks combined
+	 */
+	private void printTopUseful(int m)
+	{
+		try 
+		{	
+			String sql = "SELECT AVG(rating) as UsefulnessScore, Feedback.login FROM Feedback, Rates "
+					+ "WHERE Feedback.fid = Rates.fid GROUP BY Feedback.login ORDER BY UsefulnessScore DESC LIMIT ?";
+			try(PreparedStatement pstmt = con.conn.prepareStatement(sql))
+			{
+				pstmt.setInt(1, m);
+				ResultSet result = pstmt.executeQuery();
+				if(result.isBeforeFirst())
+				{
+					int rank = 1;
+					System.out.println("Top " + Integer.toString(m) + " Most Useful Users");
+					while(result.next())
+					{
+						System.out.println("#" + Integer.toString(rank) + "\n\tUser: " + result.getString("login"));
+						System.out.println("\t"+ "Usefulness Score: " + result.getString("UsefulnessScore"));
+						rank++;
+					}
+					System.out.println();
+				}
+				else
+				{
+					System.out.println("There are no users ranked");
 				}
 			} 
 			catch(SQLException e) {}
