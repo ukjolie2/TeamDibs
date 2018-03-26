@@ -110,6 +110,7 @@ public class UserOptions
         			 rateFBUsefulness();
         		 break;
         	 case 8: //Review a user
+        		 rateOtherUsers();
         		 break;
         	 case 9: //Search options
         		 SearchOptions searchOps = new SearchOptions(con, userLogin);
@@ -122,7 +123,124 @@ public class UserOptions
         	 }
          }
 	}
-	
+	/*******RATE OTHER USERS**********/
+	public void rateOtherUsers() {
+		System.out.println("Type in the login of the User you'd like to look at: ");
+		miscH.printUU();
+		String answer = null;
+		String sql;
+		while(answer == null) {
+			try {
+				answer = in.readLine();
+				if(answer == null) {
+					answer = " ";
+				}
+				if(!miscH.validUser(answer)) {
+					System.out.println("Invalid User, try again: ");
+					answer = null;
+				}
+			}
+			catch(Exception e) {
+			}
+		}
+		sql = "SELECT * FROM Feedback WHERE login = ?";
+		 try(PreparedStatement pstmt = con.conn.prepareStatement(sql))
+		 {
+			 pstmt.setString(1,  answer);
+			 ResultSet result = pstmt.executeQuery();
+			 if(!result.isBeforeFirst())
+			 {
+				 System.out.println("User has not made any feedback");
+			 }
+			 else {
+				 System.out.println("Selected User Feedback History: ");
+				 while(result.next())
+					{
+						System.out.println("Text : " + result.getString("text"));
+						System.out.println("\t" + "Score: " + result.getString("score")
+												+ "    Year: " + result.getString("year")
+												+ "        Vin: " + result.getString("vin")
+												+ "           Date: " + result.getString("fbdate"));
+					}
+					System.out.println();
+			 }
+		}  
+		 catch(SQLException Se) {}
+		 System.out.println("You trust this user, true or false?: ");
+			String trust = null;
+			while(true) {
+				try {
+					trust = in.readLine();
+				}
+				catch(Exception x) {}
+				if(trust.equals("true") || trust.equals("True")) {
+					trust = "1";
+					break;
+				}
+				else if(trust.equals("false") || trust.equals("False")) {
+					trust = "0";
+					break;
+				}
+			}
+			String check = "Select * from Trust t WHERE t.login1 = ? " +
+			"AND t.login2 = ?;";
+			try(PreparedStatement pCheck = con.conn.prepareStatement(check))
+			{
+				pCheck.setString(1, answer);
+				pCheck.setString(2,  userLogin);
+				ResultSet result = pCheck.executeQuery();
+				if(result.isBeforeFirst())
+				{
+					System.out.println("Search results:");
+					while(result.next())
+					{
+						sql = "UPDATE Trust t SET t.isTrusted = ? WHERE t.login1 = ? AND t.login2 = ?";
+						try(PreparedStatement pstmt = con.conn.prepareStatement(sql))
+						{
+							pstmt.setString(1, trust);
+							pstmt.setString(2,  answer);
+							pstmt.setString(3, userLogin);
+							int success = pstmt.executeUpdate();
+							if(success == 1)
+							{
+								System.out.println("You have reviewed " + answer);
+							}
+
+						} 
+						catch(SQLException e) 
+						{
+							System.out.println("Fail to rate\n");
+						}
+					}
+					System.out.println();
+				}
+				else
+				{
+					sql = "INSERT INTO Trust(login1, login2, isTrusted) VALUES(?,?,?)";
+					try(PreparedStatement pstmt = con.conn.prepareStatement(sql))
+					{
+						pstmt.setString(1, answer);
+						pstmt.setString(2,  userLogin);
+						pstmt.setString(3, trust);
+						int success = pstmt.executeUpdate();
+						if(success == 1)
+						{
+							System.out.println("You have reviewed " + answer);
+						}
+
+					} 
+					catch(SQLException e) 
+					{
+						System.out.println("Fail to rate\n");
+					}
+				}
+
+			} 
+			catch(SQLException e) 
+			{
+				System.out.println("Fail to rate\n");
+			}
+	}
 	/*******DRIVER**********/
 	/*
 	 * Creates a UUber Driver in UD table with current user's login
