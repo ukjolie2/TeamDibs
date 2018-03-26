@@ -35,7 +35,7 @@ public class SearchOptions
 			System.out.println("        Search Options     ");
 			System.out.println("1. Search for a UUber Car"); //DONE
 			System.out.println("2. Seach for useful feedbacks");
-			System.out.println("3. Determine degree of seperation of two users"); //DONE
+			System.out.println("3. Determine degree of separation of two users"); //DONE
 			System.out.println("4. Go back\n");
 			System.out.println("Choose an option (1-4): ");
 			 
@@ -56,6 +56,7 @@ public class SearchOptions
 		       		searchCar();
 		       		break;
 		       	case 2: //Search for useful feedbacks
+		       		viewUsefulFeedbacks();
 		       		break;
 		       	case 3: //Determine degree of separation
 		    		if(miscH.printUU())
@@ -465,7 +466,75 @@ public class SearchOptions
 	}
 	
 	/**************Useful Feedbacks Search***************/
-
+	/*
+	 * Prints most useful feedbacks for a user that is given by the current user
+	 */
+	private void viewUsefulFeedbacks()
+	{
+		int m = 0;
+		String num = null;
+		String login = null;
+		miscH.printUU();
+       	System.out.println("Type the login of the user you would like to see the feedbacks for: ");
+       	while(true)
+       	{
+       		try {
+				while ((login = in.readLine()) == null || login.length() == 0);
+			} catch (IOException e1) {}
+	       	if(miscH.validUser(login))
+	       		break;
+	       	else
+	    		System.out.println("Not a valid user. Try again: ");
+       	}
+		System.out.println("Type the max number of feedbacks you would like to see: ");
+       	while(true)
+       	{
+       		try {
+				while ((num = in.readLine()) == null || num.length() == 0);
+			} catch (IOException e1) {}
+	       	try{
+	       		m = Integer.parseInt(num);
+	       		break;
+	       	}catch (Exception e)
+	       	{
+	       		System.out.println("Not a valid number. Try again: ");
+	       	}
+       	}
+       	try 
+		{	
+			String sql = "SELECT F1.fid, F1.text, F1.vin, F1.Score, F1.login, AVG(R1.rating) AS avUsefulness "
+					+ "FROM Feedback AS F1, Rates AS R1, UC, UD WHERE UC.login = UD.login AND UC.vin = F1.vin "
+					+ "AND R1.fid = F1.fid AND UD.login = ? GROUP BY F1.fid ORDER BY avUsefulness DESC LIMIT ?;";
+			try(PreparedStatement pstmt = con.conn.prepareStatement(sql))
+			{
+				pstmt.setString(1, login);
+				pstmt.setInt(2, m);
+				ResultSet result = pstmt.executeQuery();
+				if(result.isBeforeFirst())
+				{
+					int rank = 1;
+					System.out.println("Top " + Integer.toString(m) + " Most Useful Feedbacks for cars driven by " + login);
+					while(result.next())
+					{
+						System.out.println("#" + Integer.toString(rank) + "\n\tfid: " + result.getString("fid"));
+						System.out.println("\t"+ "Usefulness Score: " + result.getString("avUsefulness")
+											+ "\n\tUser giving feedback: " + result.getString("login")
+											+ "\tScore given: " + result.getString("Score")
+											+ "\n\tComment: " + result.getString("text")
+											+ "\tVehicle #: " + result.getInt("vin"));
+						rank++;
+					}
+					System.out.println();
+				}
+				else
+				{
+					System.out.println("There are no useful feedbacks for this user");
+				}
+			} 
+			catch(SQLException e) {}
+		}
+		catch (Exception e) {}
+	}
 	
 	/**************Degree of Separation Search****************/
 	/*
