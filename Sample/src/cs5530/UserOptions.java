@@ -92,6 +92,7 @@ public class UserOptions
         		 reserveRide();
         		 break;
         	 case 4: //Record a ride
+        		 recordRide();
         		 break;
         	 case 5: //Favorite a car
         		 if(miscH.printUC())
@@ -556,10 +557,184 @@ public class UserOptions
 	         return null;
 	     }
 	  }
-	
 	/*******RECORD A RIDE*********/
 	public void recordRide() {
-		
+		int c = 0;
+		List<ReserveObj> records = new ArrayList<ReserveObj>();
+		System.out.println("        Record a Ride!     ");
+		while(c != 2)
+        {
+			 String choice = null;
+			 System.out.println("1. Record Ride");
+			 System.out.println("2. Finish"); 
+			 System.out.println("Choose an option (1-2): ");
+			 
+       	 try {
+				while ((choice = in.readLine()) == null || choice.length() == 0);
+			} catch (IOException e1) {
+			}
+       	 try{
+       		 c = Integer.parseInt(choice);
+       	 }catch (Exception e)
+       	 {
+       		 continue;
+       	 }
+       	 if(c == 1) {
+       		ReserveObj temp = new ReserveObj();
+       		temp.cost  = -1;
+       		temp.start  = -1;
+       		temp.end  = -1;
+       		System.out.println("Please type in the date had the ride (yyyy-mm-dd):");
+       		while(temp.date == null) {
+				try
+				{
+					temp.date = in.readLine();
+					Date test = parseDate(temp.date);
+					if(test == null) {
+						System.out.println("Error: Please type in the date you had the ride (yyyy-mm-dd):");
+						temp.date = null;
+					}
+				}
+				catch (Exception e) 
+				{
+				}
+       		}
+       		System.out.println("Please type in what hour the ride started (only one integer 0 - 22):");
+       		while(temp.start == -1) {
+				try
+				{
+					temp.start = Integer.parseInt(in.readLine());
+					if(temp.start > 22 || temp.start < 0) {
+						System.out.println("Error: Please type in what hour you'd like to reserve the car (only one integer 0 - 22):");
+						temp.start = -1;
+					}
+					
+				}
+				catch (Exception e) 
+				{
+				}
+       		}
+       		System.out.println("Please type in what hour you'd like your car ride ended (only one integer 1 - 23)\n"
+       				+ "end hour must be after start hour of the same day: ");
+       		while(temp.end == -1) {
+				try
+				{
+					temp.end = Integer.parseInt(in.readLine());
+					if(temp.end > 23 || temp.end < 1 || temp.end < temp.start) {
+						System.out.println("Error: Please type in what hour you'd like your car reservation to end (only one integer 1 - 23)\n"
+			       				+ "end hour must be after start hour of the same day: ");
+						temp.start = -1;
+					}
+					else {
+						int startInt = temp.start;
+						int endInt = temp.end;
+						temp.cost = endInt - startInt;
+						records.add(temp);
+					}
+				}
+				catch (Exception e) 
+				{
+				}
+       		}
+       		List<String> allowedVins = new ArrayList<String>();
+       		String sql = "select * from UC U WHERE U.vin NOT IN \r\n" + 
+       				"(select vin from Ride R WHERE (R.fromHour >= ? AND R.fromHour <= ? AND R.date = ?) OR (R.toHour >= ? AND R.toHour <= ? AND R.date = ?))\r\n" + 
+       				"AND U.vin in (select vin from UC U2 WHERE U2.login in \r\n" + 
+       				"(select login from Available A where A.pid in \r\n" + 
+       				"(select pid from Period P WHERE P.fromHour <= ? AND P.toHour >= ?)));";
+			try(PreparedStatement pstmt = con.conn.prepareStatement(sql))
+			{
+				pstmt.setString(1,  String.valueOf(temp.start));
+				pstmt.setString(2, String.valueOf(temp.end));
+				pstmt.setString(3, temp.date);
+				pstmt.setString(4, String.valueOf(temp.start));
+				pstmt.setString(5, String.valueOf(temp.end));
+				pstmt.setString(6, temp.date);
+				pstmt.setString(7, String.valueOf(temp.start));
+				pstmt.setString(8, String.valueOf(temp.end));
+				ResultSet result = pstmt.executeQuery();
+				if(result.isBeforeFirst())
+				{
+					System.out.println("Search results:");
+					while(result.next())
+					{
+						System.out.println("vin: " + result.getString("vin"));
+						System.out.println("\t" + "Category: " + result.getString("category")
+												+ "    Year: " + result.getString("year"));
+						allowedVins.add(result.getString("vin"));
+					}
+					System.out.println();
+				}
+				else
+				{
+					System.out.println("There are no cars available");
+					c = 2;
+					continue;
+				}
+			} 
+			catch(SQLException e) {
+				System.out.println("Fail");
+			}
+       		System.out.println("Please type in the VIN of the car you'd like to reserve");
+       		while(temp.vin == null) {
+				try
+				{
+					temp.vin = in.readLine();
+					if(!allowedVins.contains(temp.vin)) {
+						System.out.println("That car isn't available, please try again: ");
+						temp.vin = null;
+					}
+				}
+				catch (Exception e) 
+				{
+				}
+       		}
+       	 }
+       }
+		if(records.size() > 0) {
+			String confirmation = "a";
+			System.out.println("Confirm these records:");
+			for(int i = 0; i < records.size(); i++) {			
+				System.out.println("VIN:" + records.get(i).vin);
+				System.out.println("Start Hour:" + String.valueOf(records.get(i).start));
+				System.out.println("End Hour:" + String.valueOf(records.get(i).end));
+				System.out.println("Date:" + records.get(i).date);
+				System.out.println("Cost:" + String.valueOf(records.get(i).cost));
+			}
+			
+			System.out.println("yes/no?");
+			while(true)
+			{
+				try {
+					confirmation = in.readLine();
+				}
+				catch(Exception e){}
+				if(confirmation.equals(null)) {
+					confirmation = "a";
+				}
+				if(confirmation.equals("yes") || confirmation.equals("no"))
+					break;
+			}
+			if(confirmation.equals("yes")) {
+				for(int i = 0; i < records.size(); i++) {
+					String sql = "INSERT INTO Ride(cost, date, login, vin, fromHour, toHour) VALUES(?,?,?,?,?,?)";
+					try(PreparedStatement pstmt2 = con.conn.prepareStatement(sql))
+					{
+						pstmt2.setString(1,  String.valueOf(records.get(i).cost));
+						pstmt2.setString(2, records.get(i).date);
+						pstmt2.setString(3,  userLogin);
+						pstmt2.setString(4, records.get(i).vin);
+						pstmt2.setString(5,  String.valueOf(records.get(i).start));
+						pstmt2.setString(6,  String.valueOf(records.get(i).end));
+						pstmt2.executeUpdate();
+					} 
+					catch(SQLException e) 
+					{
+						System.out.println("Failed to insert into Ride\n");
+					}
+				}
+			}
+		}
 	}
 	/*******RESERVE A RIDE*********/
 	public void reserveRide()
@@ -586,6 +761,9 @@ public class UserOptions
        	 }
        	 if(c == 1) {
        		ReserveObj temp = new ReserveObj();
+       		temp.cost  = -1;
+       		temp.start  = -1;
+       		temp.end  = -1;
        		String sql = "SELECT * FROM UC";
 			try(PreparedStatement pstmt = con.conn.prepareStatement(sql))
 			{
@@ -634,30 +812,38 @@ public class UserOptions
 				{
 				}
        		}
-       		System.out.println("Please type in what hour you'd like to reserve the car (only one integer):");
-       		while(temp.start == 0) {
+       		System.out.println("Please type in what hour you'd like to reserve the car (only one integer 0 - 22):");
+       		while(temp.start == -1) {
 				try
 				{
 					temp.start = Integer.parseInt(in.readLine());
+					if(temp.start > 22 || temp.start < 0) {
+						System.out.println("Error: Please type in what hour you'd like to reserve the car (only one integer 0 - 22):");
+						temp.start = -1;
+					}
+					
 				}
 				catch (Exception e) 
 				{
 				}
        		}
-       		System.out.println("Please type in what hour you'd like your car reservation to end (only one integer):");
-       		while(temp.end == 0) {
+       		System.out.println("Please type in what hour you'd like your car reservation to end (only one integer 1 - 23)\n"
+       				+ "end hour must be after start hour of the same day: ");
+       		while(temp.end == -1) {
 				try
 				{
 					temp.end = Integer.parseInt(in.readLine());
-					int startInt = temp.start;
-					int endInt = temp.end;
-					if(startInt > endInt) {
-						temp.cost = (12 - startInt) + endInt;
+					if(temp.end > 23 || temp.end < 1 || temp.end < temp.start) {
+						System.out.println("Error: Please type in what hour you'd like your car reservation to end (only one integer 1 - 23)\n"
+			       				+ "end hour must be after start hour of the same day: ");
+						temp.start = -1;
 					}
 					else {
+						int startInt = temp.start;
+						int endInt = temp.end;
 						temp.cost = endInt - startInt;
+						reservations.add(temp);
 					}
-					reservations.add(temp);
 				}
 				catch (Exception e) 
 				{
