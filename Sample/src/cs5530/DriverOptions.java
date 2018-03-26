@@ -10,8 +10,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import com.mysql.jdbc.ResultSetMetaData;
-
 public class DriverOptions
 {
 	private Connector2 con;
@@ -49,6 +47,7 @@ public class DriverOptions
 			 switch(c) {
 	       	 
 		     	case 1: //Add a new UUber Car
+		     		printCars();
 		     		addNewCar();
 		       		break;
 		       	case 2: //UUpdate a UUber Car
@@ -60,7 +59,11 @@ public class DriverOptions
 	       	}
         }
 	}
-	public boolean addNewCar()
+	
+	/*
+	 * Adds a new car to UC
+	 */
+	public void addNewCar()
 	{
 		try 
 		{
@@ -142,7 +145,6 @@ public class DriverOptions
 					catch(SQLException e) {
 					}
 					System.out.println("Car has been registered!\n");
-					return true; // success
 				}
 
 			} 
@@ -151,55 +153,56 @@ public class DriverOptions
 				System.out.println("Car registration has failed!\n");
 			}
 		}
-		catch (Exception e) { /* ignore close errors */ }
-		return false; // failure to login
+		catch (Exception e) {  }
 	}
+	
+	/*
+	 * Prints all the cars that are owned by the current active user
+	 */
 	public boolean printCars()
 	{
-		String sql;
 		try 
-		{
-			sql = "SELECT * FROM UC WHERE login = ?";
-			String sql2 = "SELECT * FROM IsCtypes WHERE vin = ?";
-			String sql3 = "SELECT * FROM Ctypes WHERE tid = ?";
+		{	
+			String sql = "SELECT UC.vin, category, year, UC.login, make, model, address, s.avScore " + 
+					"FROM Ctypes, IsCtypes, UU, UC, " + 
+					"(SELECT UC.vin, AVG(Feedback.score) as avScore FROM UC LEFT OUTER JOIN Feedback ON UC.vin = Feedback.vin GROUP BY UC.vin) as s " + 
+					"WHERE UC.vin = IsCtypes.vin AND IsCtypes.tid = Ctypes.tid AND UU.login = UC.login AND UC.vin = s.vin AND UC.login = ?"; 
 			try(PreparedStatement pstmt = con.conn.prepareStatement(sql))
-			{ 	
-				pstmt.setString(1,  userLogin);
+			{
+				pstmt.setString(1, userLogin);
 				ResultSet result = pstmt.executeQuery();
-				boolean isNext = result.next();
-				if(isNext)
+				if(result.isBeforeFirst())
 				{
-					PreparedStatement pstmt2 = con.conn.prepareStatement(sql2);
-					pstmt2.setInt(1, result.getInt("vin"));
-					ResultSet result2 = pstmt2.executeQuery();
-					result2.next();
-					PreparedStatement pstmt3 = con.conn.prepareStatement(sql3);
-					pstmt3.setInt(1, result2.getInt("tid"));
-					ResultSet result3 = pstmt3.executeQuery();
-					result3.next();
-				    System.out.println("vin: " + result.getString("vin") + "\n\t" + result.getString("category") + ", " +
-				    		result3.getString("make") + " " + result3.getString("model") + ", " + result.getString("year"));
-				    while(result.next() && result3.next())
-				    {
-					    System.out.println("vin: " + result.getString("vin") + "\n\t" + result.getString("category") + ", " +
-					    		result3.getString("make") + " " + result3.getString("model") + ", " + result.getString("year"));
-				    }
-				    System.out.println("\n");
-				    return true;
+					System.out.println("Your Registered UUber Cars:");
+					while(result.next())
+					{
+						System.out.println("vin: " + result.getString("vin"));
+						System.out.println("\t" + "Category: " + result.getString("category") 
+												+ "    Make: " + result.getString("make")
+												+ "    Model: " + result.getString("model")
+												+ "    Year: " + result.getString("year")
+												+ "    Owner: " + result.getString("login")
+												+ "    City: " + result.getString("address")
+												+ "    Average Score: " + result.getString("avScore"));
+					}
+					System.out.println();
+					return true;
 				}
 				else
 				{
-					System.out.println("You have no registered cars.\n");
+					System.out.println("You do not own any cars.");
 				}
 			} 
-			catch(SQLException e) 
-			{
-			}
+			catch(SQLException e) {}
 		}
-		catch (Exception e) { /* ignore close errors */ }
-		return false; // failure to log in
+		catch (Exception e) {}
+		return false;
 	}
-	public boolean updateCar()
+	
+	/*
+	 * Updates car user selects
+	 */
+	public void updateCar()
 	{
 		try 
 		{
@@ -214,18 +217,17 @@ public class DriverOptions
 			System.out.println("Type in the vin of the vehicle you would like to update: ");
 			try 
 			{
-				 while(true)
+				 while ((choice = in.readLine()) == null || choice.length() == 0);
+				 try 
 				 {
-					 while ((choice = in.readLine()) == null || choice.length() == 0);
-					 try 
-					 {
-						 Integer.parseInt(choice);
-					 } catch (Exception e) { }
-					 if(isUsersCar(choice))
-					 {
-						 break;
-					 }
-					 System.out.println("Not a valid vin. Try again: ");
+					 Integer.parseInt(choice);
+				 } catch (Exception e) {
+					 System.out.println("Invalid vin");
+					 return;
+				 }
+				 if(!isUsersCar(choice))
+				 {
+					 return;
 				 }
 			 } catch (IOException e1) {}
 			
@@ -298,7 +300,6 @@ public class DriverOptions
 				if(success == 1)
 				{
 					System.out.println("Car has been updated!\n");
-					return true; // success
 				}
 
 			} 
@@ -310,7 +311,6 @@ public class DriverOptions
 		}catch(Exception e) {
 		}
 		
-		return false;
 	}
 	
 	public boolean isUsersCar(String choice)
@@ -319,25 +319,27 @@ public class DriverOptions
 		{
 			String sql=null;
 				 
-			sql = "SELECT * FROM UC WHERE vin = ?";
+			sql = "SELECT * FROM UC WHERE vin = ? and login = ?";
 			try(PreparedStatement pstmt = con.conn.prepareStatement(sql))
 			{
 				pstmt.setString(1,  choice);
-
+				pstmt.setString(2, userLogin);
 				ResultSet result = pstmt.executeQuery();
 				if(result.next())
 				{
 					return true;
 				}
+				else
+					System.out.println("Vehicle chosen is not registered by you");
 			} 
 			catch(SQLException e) 
 			{
-				System.out.println("Vehicle chosen is not registered by you");
+				System.out.println("Invalid vin");
 			}
 		}
 		catch (Exception e) 
 		{ 
-			System.out.println("Vehicle chosen is not registered by you");
+			System.out.println("Invalid vin");
 		}
 		return false; //no car
 	}
