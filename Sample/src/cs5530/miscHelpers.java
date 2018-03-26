@@ -77,8 +77,8 @@ public class miscHelpers
 											"User: " + result.getString("login") + ", " +
 											"Score: " + result.getString("score") + ", " +
 											"Comment: " + result.getString("text") + "\n");
-						return true;
 					}
+					return true;
 				}
 				else
 				{
