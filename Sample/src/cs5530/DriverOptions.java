@@ -25,13 +25,14 @@ public class DriverOptions
 	{
 		 String choice = null;
 	     int c=0;
-		 while(c != 3)
+		 while(c != 4)
 		 {
 			 System.out.println("        UUber Driver Options     ");
 			 System.out.println("1. Add a new UUber Car"); //DONE
 			 System.out.println("2. Update a UUber Car"); //DONE
-			 System.out.println("3. Go back\n"); //DONE
-			 System.out.println("Choose an option (1-3): ");
+			 System.out.println("3. Add your availablity");
+			 System.out.println("4. Go back\n"); //DONE
+			 System.out.println("Choose an option (1-4): ");
 			 
 			 try {
 				 while ((choice = in.readLine()) == null || choice.length() == 0);
@@ -42,7 +43,7 @@ public class DriverOptions
 			 {
 				 continue;
 			 }
-			 if (c<1 | c>2)
+			 if (c<1 | c>3)
 				 continue;
 			 switch(c) {
 	       	 
@@ -56,6 +57,9 @@ public class DriverOptions
 		       			updateCar();
 		       		}
 		       		break;
+		       	case 3:
+		       		printAv();
+		       		addAv();
 	       	}
         }
 	}
@@ -312,7 +316,9 @@ public class DriverOptions
 		}
 		
 	}
-	
+	/*
+	 * Detemines if given vin is users car
+	 */
 	public boolean isUsersCar(String choice)
 	{
 		try 
@@ -410,5 +416,146 @@ public class DriverOptions
 		{
 		}
 		return null;
+	}
+	/*
+	 * Prints the driver's already existing availability
+	 */
+	public void printAv()
+	{
+		try 
+		{	
+			String sql = "SELECT * FROM Available, Period WHERE login = ? AND Available.pid = Period.pid"; 
+			try(PreparedStatement pstmt = con.conn.prepareStatement(sql))
+			{
+				pstmt.setString(1, userLogin);
+				ResultSet result = pstmt.executeQuery();
+				if(result.isBeforeFirst())
+				{
+					System.out.println("Your availablity:");
+					while(result.next())
+					{
+						System.out.println("\tFrom: " + result.getString("fromHour") + "\tTo: " + result.getString("toHour"));
+					}
+					System.out.println();
+				}
+				else
+				{
+					System.out.println("You have no available times");
+				}
+			} 
+			catch(SQLException e) {}
+		}
+		catch (Exception e) {}
+	}
+	/*
+	 * Adds a driver's availability
+	 */
+	public void addAv()
+	{
+		try 
+		{
+			String fromHour = null;
+			String toHour = null;
+			int FH = 0;
+			int TH = 0;
+			String sql=null;
+			
+			System.out.println("Enter the hour of the day you would like your shift to start (0-23): ");
+			while (fromHour == null)
+			{
+				while((fromHour = in.readLine()) == null || fromHour.length() == 0);
+				try {
+					FH = Integer.parseInt(fromHour);
+					if(FH < 0 | FH > 23)
+					{
+						System.out.println("Not a valid time. Try again: ");
+						fromHour = null;
+					}
+				}catch (Exception e)
+				{
+					System.out.println("Not a valid time. Try again: ");
+					fromHour = null;
+				}
+			}
+			
+			System.out.println("Enter the hour of the day you would like your shift to end (1-24): ");
+			while (toHour == null)
+			{
+				while((toHour = in.readLine()) == null || toHour.length() == 0);
+				try {
+					TH = Integer.parseInt(toHour);
+					if(TH < 1 || TH > 24 || TH <= FH)
+					{
+						System.out.println("Not a valid time. Try again: ");
+						toHour = null;
+					}
+				}catch (Exception e)
+				{
+					System.out.println("Not a valid time. Try again2: ");
+					toHour = null;
+				}
+			}
+			
+			int success = 0;
+			ResultSet generatedKeys;
+			int pid;
+			pid = periodExists(FH, TH);
+			if(pid == Integer.MAX_VALUE)
+			{
+				sql = "INSERT INTO Period(fromHour, toHour) VALUES(?,?)"; //pid autoincrements
+				try(PreparedStatement pstmt = con.conn.prepareStatement(sql))
+				{
+					pstmt.setString(1, fromHour);
+					pstmt.setString(2, toHour);
+					success = pstmt.executeUpdate();
+					if(success == 1)
+					{
+						generatedKeys = pstmt.getGeneratedKeys();
+						generatedKeys.next();
+						pid = generatedKeys.getInt(1);
+					}
+	
+				} 
+				catch(SQLException e) 
+				{
+					System.out.println("Failed to add available time!\n");
+				}
+			}
+		
+			String sql2 = "INSERT INTO Available(login, pid) VALUES(?,?)";
+			try(PreparedStatement pstmt2 = con.conn.prepareStatement(sql2))
+			{
+				pstmt2.setString(1, userLogin);
+				pstmt2.setInt(2, pid);
+				pstmt2.executeUpdate();
+				System.out.println("Available time has been added!\n");
+			}
+			catch(SQLException e) {
+			}
+		}
+		catch (Exception e) {  }
+	}
+	/*
+	 * Determines if a given period already exists in the Period table
+	 */
+	private int periodExists(int from, int to)
+	{
+		try 
+		{		 
+			String sql = "SELECT * FROM Period WHERE fromHour = ? AND toHour = ?";
+			try(PreparedStatement pstmt = con.conn.prepareStatement(sql))
+			{
+				pstmt.setInt(1, from);
+				pstmt.setInt(2, to);
+				ResultSet result = pstmt.executeQuery();
+				if(result.next())
+				{
+					return result.getInt("pid"); // period exists
+				}
+			} 
+			catch(SQLException e) {}
+		}
+		catch (Exception e) {}
+		return Integer.MAX_VALUE; //period does not exist
 	}
 }
