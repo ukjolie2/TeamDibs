@@ -3,6 +3,8 @@ package cs5530;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class miscHelpers
 {
@@ -28,7 +30,7 @@ public class miscHelpers
 				ResultSet result = pstmt.executeQuery();
 				if(result.isBeforeFirst())
 				{
-					System.out.println("Search results:");
+					System.out.println("UUber Cars:");
 					while(result.next())
 					{
 						System.out.println("vin: " + result.getString("vin"));
@@ -110,5 +112,96 @@ public class miscHelpers
 		}
 		catch (Exception e) {}
 		return false; //car does not exist
+	}
+	
+	/*
+	 * Checks if given user login is a valid user in the UU table
+	 */
+	public boolean validUser(String login)
+	{
+		try 
+		{		 
+			String sql = "SELECT * FROM UU WHERE login = ?";
+			try(PreparedStatement pstmt = con.conn.prepareStatement(sql))
+			{
+				pstmt.setString(1, login);
+				ResultSet result = pstmt.executeQuery();
+				if(result.next())
+				{
+					return true; // user exists
+				}
+			} 
+			catch(SQLException e) {}
+		}
+		catch (Exception e) {}
+		return false; //user does not exist
+	}
+	
+	/*
+	 * Prints the login, name, address of all UUber users in UU table
+	 */
+	public boolean printUU()
+	{
+		try 
+		{	
+			String sql = "SELECT login, name, address" + 
+					" FROM UU"; 
+			try(PreparedStatement pstmt = con.conn.prepareStatement(sql))
+			{
+
+				ResultSet result = pstmt.executeQuery();
+				if(result.isBeforeFirst())
+				{
+					System.out.println("UUber Users:");
+					while(result.next())
+					{
+						System.out.println("\tUser Login: " + result.getString("login") 
+												+ "\t\tName: " + result.getString("name")
+												+ "\t\tCity: " + result.getString("address"));
+					}
+					System.out.println();
+					return true;
+				}
+				else
+				{
+					System.out.println("There are no users.");
+				}
+			} 
+			catch(SQLException e) {}
+		}
+		catch (Exception e) {}
+		return false;
+	}
+	
+	/*
+	 * Gets the logins of all the users in UU table
+	 */
+	public List<String> getAllUU()
+	{
+		List<String> users =  new ArrayList<String>();
+		try 
+		{	
+			String sql = "SELECT login" + 
+					" FROM UU"; 
+			try(PreparedStatement pstmt = con.conn.prepareStatement(sql))
+			{
+
+				ResultSet result = pstmt.executeQuery();
+				if(result.isBeforeFirst())
+				{
+					while(result.next())
+					{
+						users.add(result.getString("login"));
+					}
+				}
+				else
+				{
+					System.out.println("There are no users.");
+				}
+			} 
+			catch(SQLException e) {}
+		}
+		catch (Exception e) {}
+		return users;
 	}
 }
