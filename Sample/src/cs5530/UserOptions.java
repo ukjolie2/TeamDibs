@@ -158,7 +158,6 @@ public class UserOptions
 					{
 						System.out.println("Text : " + result.getString("text"));
 						System.out.println("\t" + "Score: " + result.getString("score")
-												+ "    Year: " + result.getString("year")
 												+ "        Vin: " + result.getString("vin")
 												+ "           Date: " + result.getString("fbdate"));
 					}
@@ -961,6 +960,28 @@ public class UserOptions
 						int endInt = temp.end;
 						temp.cost = endInt - startInt;
 						reservations.add(temp);
+						String sqlDup = "SELECT COUNT(*) as TotalRides, R.vin as Owner\r\n" + 
+								"FROM Reserve R, (select distinct login from Reserve R where\r\n" + 
+								"R.vin = ?) as N WHERE R.login = N.login\r\n" + 
+								"GROUP BY R.vin ORDER BY TotalRides DESC;";
+						try(PreparedStatement similar = con.conn.prepareStatement(sqlDup))
+						{
+							similar.setString(1,  String.valueOf(temp.vin));
+							ResultSet result = similar.executeQuery();
+							if(result.isBeforeFirst()) {
+								System.out.println("Similar Users picked these cars: ");
+								while(result.next())
+								{
+									if(!result.getString("Owner").equals(temp.vin)) {
+										System.out.println("vin: " + result.getString("Owner"));
+									}
+								}
+								System.out.println();
+							}
+						}
+						catch(SQLException e) 
+						{
+						}
 					}
 				}
 				catch (Exception e) 
